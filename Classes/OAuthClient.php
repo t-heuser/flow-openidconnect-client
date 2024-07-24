@@ -77,6 +77,18 @@ class OAuthClient extends \Flownative\OAuth2\Client\OAuthClient
     }
 
     /**
+     * @throws ConfigurationException
+     */
+    public function getEndSessionUri(): string
+    {
+        $this->initializeOptionsIfNeeded();
+        if (!isset($this->options['endSessionEndpoint']) || !is_string($this->options['endSessionEndpoint'])) {
+            throw new ConfigurationException(sprintf('Missing configuration endSessionEndpoint for service "%s" (%s). Either configure it explicitly via settings or make sure that auto-discovery returns "end_session_endpoint".', $this->getServiceName(), $this->getServiceType()), 1558612618);
+        }
+        return $this->options['endSessionEndpoint'];
+    }
+
+    /**
      * Returns the OAuth service endpoint for the access token.
      *
      * @return string
@@ -93,11 +105,13 @@ class OAuthClient extends \Flownative\OAuth2\Client\OAuthClient
 
     /**
      * @return string
+     * @throws ConfigurationException
      */
     public function getClientId(): string
     {
         $this->initializeOptionsIfNeeded();
         if (!isset($this->options['clientId'])) {
+            throw new ConfigurationException(sprintf('Missing configuration clientId for service "%s" (%s). Either configure it explicitly via settings or make sure that auto-discovery returns "client_id".', $this->getServiceName(), $this->getServiceType()), 1558615099);
         }
         return $this->options['clientId'];
     }

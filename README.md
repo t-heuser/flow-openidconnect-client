@@ -31,13 +31,14 @@ A few feature highlights of this package:
   applications or Neos websites
 - OIDC auto-discovery support for minimal configuration
 - support for multiple OIDC services (servers) within one application
-- integration into Flow's session management based on JWT cookies
+- integration into Flow's session management
 - mapping of Flow user roles from claims
 - automatic JWT signature verification
 - authentication via bearer access token
 - automatic refresh of expired access tokens
 - easy access to ID tokens through the Flow account model
 - command line support for testing
+- [Back-Channel Logout-Support](https://openid.net/specs/openid-connect-backchannel-1_0.html)
 
 ## Terms and Background
 
@@ -126,7 +127,6 @@ What you need is:
 
 - configure the discovery URI for your identity provider
 - configure Flow to use this plugin as an authentication provider
-- configure the HTTP chain to manage JWT session cookies
 - configure Flow and this plugin to set user roles
 
 You will use the
@@ -141,7 +141,6 @@ third party's services accessing an API provided by your application.
 - configure the discovery URI for your identity provider
 - configure Flow to use this plugin as a (second) authentication
   provider
-- configure the HTTP chain to manage JWT session cookies
 - configure Flow and this plugin to set user roles
 - protect your API methods and evaluate further permissions obtained
   from the identity token
@@ -232,14 +231,13 @@ The Authorization Code Grant is used for authenticating users using a
 web browser. The typical application flow goes like this:
 
 1. a user tries to access a protected page (controller action)
-2. Flow checks if the user has a cookie containing a valid JWT
+2. Flow checks if the user has a session object with valid JWT
 3. no valid JWT, so redirect to the identity provider's login page
 4. user logs in and is redirected back to Flow
 5. an authorization code is passed to Flow and Flow uses that to obtain
    an access token behind the scenes
-6. a JWT is extracted from the access token and sent to the browser as a
-   cookie
-7. during the following web requests, the browser sends the cookie and Flow
+6. a JWT is extracted from the access token and saved into the session
+7. during the following web requests, the browser sends the session cookie and Flow
    recognizes the user as being authenticated
 
 The Flow application needs a client identifier and a client secret so it
@@ -260,12 +258,6 @@ Flownative:
             discoveryUri: 'https://id.example.com/.well-known/openid-configuration'
             clientId: 'abcdefghijklmnopqrstuvwxyz01234567890'
             clientSecret: 'YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXowMTIzNDU2Nzg5MA=='
-      middleware:
-        cookie:      
-          # For testing purposes allow cookies without HTTPS:
-          secure: false
-          # Create an HTTP only cookie for increased security
-          httpOnly: true
 
 Neos:
   Flow:
@@ -379,7 +371,7 @@ Flownative:
       services:
         test:
           options:
-            discoveryUri: 'https://id.example.com/.well-known/openid-configuration'
+            baseUri: 'https://id.example.com'
             clientId: 'abcdefghijklmnopqrstuvwxyz01234567890'
             clientSecret: 'YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXowMTIzNDU2Nzg5MA=='
 ```
@@ -555,6 +547,44 @@ key, you should flush the respective cache (or all caches):
    ./flow flow:cache:flushone Flownative_OpenIdConnect_Client_JWKs
 ``` 
 
+### Back-Channel Logout
+
+To enable[ Back-Channel Logout](https://openid.net/specs/openid-connect-backchannel-1_0.html) support you need to enable it in your Identity Provider and set a corresponding url. Have
+a look at the documentation of your Identity Provider how to set the url for the Back-Channel Logout.
+
+You also have to define the route in your Neos application. The Controller for the route is provided by this package.
+[Have a look at the Flow documentation on how to define routes.](https://flowframework.readthedocs.io/en/latest/TheDefinitiveGuide/PartIII/Routing.html)
+
+You must set up an individual route for every Identity Provider you want to support.
+
+A route configuration could look like this in your `Configuration/Routes.yaml`:
+```yaml
+- name: 'SSO Back-Channel Logout URL'
+  uriPattern: 'backChannelLogout'
+  defaults:
+    '@package': 'Flownative.OpenIdConnect.Client'
+    '@controller': 'BackChannelLogout'
+    '@action': 'index'
+    'serviceName': 'nameOfYourService'
+  httpMethods: [ 'POST' ]
+```
+
+The `name` and `uriPattern` can be whatever value you want.
+
+The `serviceName` must be the same name as you defined in your Settings under `Flownative -> OpenIdConnect -> Client -> services`.
+
+The other values must be the same as in the example.
+
+### Logging out a user in your OIDC Provider
+
+To log out the user in the OIDC Provider upon logging out the user in your Neos instance you'll have to redirect the
+user to the end session endpoint of your OIDC Provider.
+
+You can obtain the end session endpoint uri from the `OpenIdConnectClient::getEndSessionUri` method.
+After logging out the user in your Neos instance you can then perform a redirect to the end session uri. Afterward the
+user will be redirected to the uri given to the method.
+
+
 ## More about OpenID Connect
 
 See also:
@@ -608,7 +638,6 @@ Neos:
             providerOptions:
               addRolesFromExistingAccount: true
               accountIdentifierTokenValueName: 'email'
-              jwtCookieName: 'flownative_oidc_jwt'
               serviceName: 'neos'
             token: 'Flownative\OpenIdConnect\Client\Authentication\OpenIdConnectToken'
             entryPoint: 'Flownative\OpenIdConnect\Client\Authentication\OpenIdConnectEntryPoint'
