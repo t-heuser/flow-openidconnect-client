@@ -60,8 +60,9 @@ final class BackChannelLogoutController extends ActionController
         // One of these will be present as it was verified before.
         $sessionIdentifier = $logoutToken->values['sub'] ?? $logoutToken->values['sid'];
 
+        $tagPrefix = md5("Flownative-OpenIdConnect-Client-$serviceName");
         $this->sessionManager->destroySessionsByTag(
-            'Flownative-OpenIdConnect-Client-'.$sessionIdentifier,
+            "$tagPrefix-$sessionIdentifier",
             'A valid back channel logout request was received for this session.'
         );
 
