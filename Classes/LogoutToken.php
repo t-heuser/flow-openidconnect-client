@@ -70,7 +70,7 @@ class LogoutToken extends AbstractToken
             }
         }
 
-        if ($client->getBaseUri() !== $this->values['iss']) {
+        if ($client->getRealmUri() !== $this->values['iss']) {
             throw new LogoutTokenClaimValidationException(
                 'The given logout token does not contain a valid "iss" parameter.'
             );

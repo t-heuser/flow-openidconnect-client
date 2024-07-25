@@ -63,8 +63,8 @@ final class OidcCommandController extends CommandController
             $this->outputLine('<error>Unknown service "%s".</error>', [$serviceName]);
             exit(1);
         }
-        if (empty($this->settings['services'][$serviceName]['options']['baseUri'])) {
-            $this->outputLine('<error>Missing option "baseUri" for service "%s".</error>', [$serviceName]);
+        if (empty($this->settings['services'][$serviceName]['options']['realmUri'])) {
+            $this->outputLine('<error>Missing option "realmUri" for service "%s".</error>', [$serviceName]);
             exit(1);
         }
 

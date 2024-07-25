@@ -152,7 +152,7 @@ final class OpenIdConnectProvider extends AbstractProvider
             );
         }
 
-        if ($openIdConnectClient->getBaseUri() !== $this->identityToken->values['iss']) {
+        if ($openIdConnectClient->getRealmUri() !== $this->identityToken->values['iss']) {
             throw new AuthenticationException(
                 'The given identity token does not contain a valid "iss" parameter.'
             );

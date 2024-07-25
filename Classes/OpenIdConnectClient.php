@@ -140,10 +140,10 @@ final class OpenIdConnectClient
             $this->settings['services'][$this->serviceName]['options']
         );
 
-        if (empty($this->options['baseUri'])) {
+        if (empty($this->options['realmUri'])) {
             throw new ConfigurationException(
                 sprintf(
-                    'OpenID Connect Client: Option "baseUri" has to be configured for service "%s".',
+                    'OpenID Connect Client: Option "realmUri" has to be configured for service "%s".',
                     $this->serviceName
                 ), 1554968498
             );
@@ -163,15 +163,16 @@ final class OpenIdConnectClient
         return $this->options;
     }
 
-    public function getBaseUri(): string
+    public function getRealmUri(): string
     {
-        $baseUri = $this->options['baseUri'];
-        if (str_ends_with($baseUri, '/')) {
-            $baseUri = substr($baseUri, 0, -1);
+        $realmUri = $this->options['realmUri'];
+        if (str_ends_with($realmUri, '/')) {
+            $realmUri = substr($realmUri, 0, -1);
         }
 
-        return $baseUri;
+        return $realmUri;
     }
+
 
     /**
      * Returns OAuth access token, using an OpenID Connect scope
@@ -535,6 +536,6 @@ final class OpenIdConnectClient
 
     private function getDiscoveryUri(): string
     {
-        return $this->getBaseUri().self::OPENID_CONFIGURATION_PATH;
+        return $this->getRealmUri().self::OPENID_CONFIGURATION_PATH;
     }
 }

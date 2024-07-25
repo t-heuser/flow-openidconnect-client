@@ -371,7 +371,7 @@ Flownative:
       services:
         test:
           options:
-            baseUri: 'https://id.example.com'
+            realmUri: 'https://id.example.com/realms/%REALM%/'
             clientId: 'abcdefghijklmnopqrstuvwxyz01234567890'
             clientSecret: 'YWJjZGVmZ2hpamtsbW5vcHFyc3R1dnd4eXowMTIzNDU2Nzg5MA=='
 ```
@@ -607,7 +607,7 @@ Flownative:
       services:
         neos:
           options:
-            discoveryUri: '%env:OIDC_DISCOVERY_URI%'
+            realmUri: '%env:OIDC_REALM_URI%'
             clientId: '%env:OIDC_CLIENT_ID%'
             clientSecret: '%env:OIDC_CLIENT_SECRET%'
             additionalParameters:
