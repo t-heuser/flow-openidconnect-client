@@ -1,10 +1,9 @@
 <?php
+
 namespace Flownative\OpenIdConnect\Client\Command;
 
 use Doctrine\ORM\EntityManagerInterface;
 use Flownative\OpenIdConnect\Client\OpenIdConnectClient;
-use GuzzleHttp\Client as HttpClient;
-use GuzzleHttp\Exception\GuzzleException;
 use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Cli\CommandController;
@@ -23,7 +22,7 @@ final class OidcCommandController extends CommandController
     protected $settings;
 
     /**
-     * @param EntityManagerInterface $entityManager
+     * @param  EntityManagerInterface  $entityManager
      * @return void
      */
     public function injectEntityManager(EntityManagerInterface $entityManager): void
@@ -38,7 +37,7 @@ final class OidcCommandController extends CommandController
      * service configured via Flow settings and retrieves information about endpoints,
      * capabilities and further information. The retrieved data is displayed in a table.
      *
-     * @param string|null $serviceName The service name, as it was configured via Flow settings
+     * @param  string|null  $serviceName  The service name, as it was configured via Flow settings
      * @return void
      */
     public function discoverCommand(string $serviceName = null): void
@@ -49,14 +48,18 @@ final class OidcCommandController extends CommandController
         }
         if ($serviceName === null) {
             if (count($this->settings['services']) > 1) {
-                $this->outputLine('<error>You must specify a service with --service-name, because multiple services are available</error>');
-                $this->outputLine('Use one of the following service names: ' . implode(', ', array_keys($this->settings['services'])));
+                $this->outputLine(
+                    '<error>You must specify a service with --service-name, because multiple services are available</error>'
+                );
+                $this->outputLine(
+                    'Use one of the following service names: '.implode(', ', array_keys($this->settings['services']))
+                );
                 exit(1);
             }
             $serviceName = array_key_first($this->settings['services']);
         }
 
-        if (!isset($this->settings['services'][$serviceName])) {
+        if ( ! isset($this->settings['services'][$serviceName])) {
             $this->outputLine('<error>Unknown service "%s".</error>', [$serviceName]);
             exit(1);
         }
@@ -68,10 +71,10 @@ final class OidcCommandController extends CommandController
         $openIdConnectClient = new OpenIdConnectClient($serviceName);
 
         $rows = [];
-        foreach ( $openIdConnectClient->getDiscoveryOptions(true) as $optionName => $optionValue) {
+        foreach ($openIdConnectClient->getDiscoveryOptions(true) as $optionName => $optionValue) {
             $rows[] = [
                 $optionName,
-                !is_string($optionValue) ? var_export($optionValue, true) : $optionValue
+                ! is_string($optionValue) ? var_export($optionValue, true) : $optionValue,
             ];
         }
 
@@ -79,7 +82,7 @@ final class OidcCommandController extends CommandController
     }
 
     /**
-     * @param string $serviceName
+     * @param  string  $serviceName
      */
     public function getAccessTokenCommand(string $serviceName): void
     {
@@ -95,7 +98,10 @@ final class OidcCommandController extends CommandController
                 $additionalParameters
             );
         } catch (IdentityProviderException $e) {
-            $this->outputLine('<error>%s: "%s"</error>', [$e->getMessage(), $e->getResponseBody()['error_description'] ?? '']);
+            $this->outputLine(
+                '<error>%s: "%s"</error>',
+                [$e->getMessage(), $e->getResponseBody()['error_description'] ?? '']
+            );
             exit (1);
         } catch (\Exception $e) {
             $this->outputLine('<error>%s</error>', [$e->getMessage()]);
