@@ -27,10 +27,11 @@ final class BackChannelLogoutController extends ActionController
      */
     protected $securityLogger;
 
-    public function __construct(
-        private readonly SessionManagerInterface $sessionManager
-    ) {
-    }
+    /**
+     * @Flow\Inject
+     * @var SessionManagerInterface
+     */
+    protected $sessionManager;
 
     /**
      * @throws StopActionException
@@ -43,7 +44,7 @@ final class BackChannelLogoutController extends ActionController
             $logoutToken->setDataFromJwt($this->request->getArgument('logout_token'), $serviceName);
 
             $logoutToken->verifyLogoutTokenClaims($openIdConnectClient);
-        } catch (NoSuchArgumentException) {
+        } catch (NoSuchArgumentException $exception) {
             $this->returnError('No logout_token provided.');
         } catch (LogoutTokenClaimValidationException $exception) {
             $this->securityLogger->info(
@@ -75,13 +76,15 @@ final class BackChannelLogoutController extends ActionController
 
     /**
      * @throws StopActionException
+     * @return never
      */
-    private function returnError(string $errorMessage): never
+    private function returnError(string $errorMessage)
     {
         $this->response->setContentType('application/json');
         $this->throwStatus(
             400,
-            content: json_encode(['error' => 'invalid_request', 'error_description' => $errorMessage])
+            null,
+            json_encode(['error' => 'invalid_request', 'error_description' => $errorMessage])
         );
     }
 }

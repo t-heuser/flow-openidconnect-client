@@ -4,6 +4,7 @@ namespace Flownative\OpenIdConnect\Client;
 
 use InvalidArgumentException;
 use Neos\Flow\Session\SessionManagerInterface;
+use Neos\Flow\Annotations as Flow;
 
 /**
  * Value object for an OpenID Connect identity token.
@@ -12,10 +13,11 @@ use Neos\Flow\Session\SessionManagerInterface;
  */
 final class IdentityToken extends AbstractToken
 {
-    public function __construct(
-        private readonly SessionManagerInterface $sessionManager
-    ) {
-    }
+    /**
+     * @Flow\Inject
+     * @var SessionManagerInterface
+     */
+    protected $sessionManager;
 
     /**
      * Additionally adds a tag to the session to be able to identify the session later on when using the back channel

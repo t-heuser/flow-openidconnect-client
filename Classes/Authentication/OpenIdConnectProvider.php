@@ -29,11 +29,17 @@ use RuntimeException;
 
 final class OpenIdConnectProvider extends AbstractProvider
 {
-    #[Flow\Inject]
-    protected Context $securityContext;
+    /**
+     * @Flow\Inject
+     * @var Context
+     */
+    protected $securityContext;
 
-    #[Flow\Inject]
-    protected PolicyService $policyService;
+    /**
+     * @Flow\Inject
+     * @var PolicyService
+     */
+    protected $policyService;
 
     /**
      * @Flow\Inject(name="Neos.Flow:SecurityLogger")
@@ -41,8 +47,11 @@ final class OpenIdConnectProvider extends AbstractProvider
      */
     protected $logger;
 
-    #[Flow\Inject]
-    protected AccountRepository $accountRepository;
+    /**
+     * @Flow\Inject
+     * @var AccountRepository
+     */
+    protected $accountRepository;
 
     /**
      * @return array
@@ -110,7 +119,7 @@ final class OpenIdConnectProvider extends AbstractProvider
                 ),
                 LogEnvironment::fromMethodName(__METHOD__)
             );
-        } catch (SecurityException\AuthenticationRequiredException) {
+        } catch (SecurityException\AuthenticationRequiredException $exception) {
             $authenticationToken->setAuthenticationStatus(TokenInterface::AUTHENTICATION_NEEDED);
 
             return;

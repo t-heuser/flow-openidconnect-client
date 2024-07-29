@@ -112,18 +112,19 @@ abstract class AbstractToken
      */
     public function hasValidSignature(array $jwks): bool
     {
-        return match ($this->header['alg']) {
-            'RS256', 'RS384', 'RS512' => $this->verifyRsaJwtSignature(
+        if (in_array($this->header['alg'], ['RS256', 'RS384', 'RS512'])) {
+            return $this->verifyRsaJwtSignature(
                 'sha'.substr($this->header['alg'], 2),
                 $this->getMatchingKeyForJws($jwks, $this->header['alg'], $this->header['kid'] ?? null),
                 $this->payload,
                 $this->signature
-            ),
-            default => throw new ServiceException(
-                sprintf('Unsupported JWT signature type %s.', $this->header['alg']),
-                1559213623
-            )
-        };
+            );
+        }
+
+        throw new ServiceException(
+            sprintf('Unsupported JWT signature type %s.', $this->header['alg']),
+            1559213623
+        );
     }
 
     public function hasValidAudience(string $expectedAudience): bool
@@ -145,7 +146,11 @@ abstract class AbstractToken
      */
     public function isExpiredAt(DateTimeInterface $now): bool
     {
-        return $this->parsedJwt?->isExpired($now);
+        if ($this->parsedJwt === null) {
+            return true;
+        }
+
+        return $this->parsedJwt->isExpired($now);
     }
 
     /**

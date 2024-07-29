@@ -30,7 +30,9 @@ use RuntimeException;
 
 final class OpenIdConnectClient
 {
-    #[Flow\InjectConfiguration]
+    /**
+     * @Flow\InjectConfiguration
+     */
     protected array $settings;
 
     /**
@@ -39,14 +41,23 @@ final class OpenIdConnectClient
      */
     protected $logger;
 
-    #[Flow\Inject]
-    protected IdentityTokenRepository $identityTokenRepository;
+    /**
+     * @Flow\Inject
+     * @var IdentityTokenRepository
+     */
+    protected $identityTokenRepository;
 
-    #[Flow\Inject]
-    protected IdentityTokenFactory $identityTokenFactory;
+    /**
+     * @Flow\Inject
+     * @var IdentityTokenFactory
+     */
+    protected $identityTokenFactory;
 
-    #[Flow\Inject]
-    protected UriFactoryInterface $uriFactory;
+    /**
+     * @Flow\Inject
+     * @var UriFactoryInterface
+     */
+    protected $uriFactory;
 
     /**
      * @var VariableFrontend
@@ -175,13 +186,12 @@ final class OpenIdConnectClient
     public function getRealmUri(): string
     {
         $realmUri = $this->options['realmUri'];
-        if (str_ends_with($realmUri, '/')) {
+        if (substr($realmUri, -1) === '/') {
             $realmUri = substr($realmUri, 0, -1);
         }
 
         return $realmUri;
     }
-
 
     /**
      * Returns OAuth access token, using an OpenID Connect scope
@@ -381,6 +391,7 @@ final class OpenIdConnectClient
         try {
             $identityToken = $this->identityTokenFactory->create();
             $identityToken->setDataFromJwt($tokenValues['id_token'], $this->serviceName);
+
             return $this->identityTokenRepository->save($identityToken);
         } catch (Exception $e) {
             throw new ServiceException('OpenID Connect Client: Failed parsing identity token from JWT', 1602501992, $e);

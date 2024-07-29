@@ -30,15 +30,24 @@ final class OpenIdConnectToken extends AbstractToken
      */
     public const OIDC_PARAMETER_NAME = 'flownative_oidc';
 
-    #[Flow\Inject]
-    protected IdentityTokenRepository $identityTokenRepository;
+    /**
+     * @Flow\Inject
+     * @var IdentityTokenRepository
+     */
+    protected $identityTokenRepository;
 
-    #[Flow\Inject]
-    protected IdentityTokenFactory $identityTokenFactory;
+    /**
+     * @Flow\Inject
+     * @var IdentityTokenFactory
+     */
+    protected $identityTokenFactory;
 
     private array $queryParameters = [];
 
-    private string|array|null $authorizationHeader = '';
+    /**
+     * @var string|array|null
+     */
+    private $authorizationHeader = '';
 
     /**
      * @throws InvalidAuthenticationStatusException
@@ -61,7 +70,7 @@ final class OpenIdConnectToken extends AbstractToken
 
         try {
             $this->identityTokenRepository->get($this->entryPoint->getOptions()['serviceName']);
-        } catch (NoSuchIdentityTokenException) {
+        } catch (NoSuchIdentityTokenException $exception) {
             if ($this->getAuthenticationStatus() !== self::AUTHENTICATION_SUCCESSFUL) {
                 $this->setAuthenticationStatus(self::AUTHENTICATION_NEEDED);
             }
@@ -82,7 +91,7 @@ final class OpenIdConnectToken extends AbstractToken
     {
         $serviceName = $this->entryPoint->getOptions()['serviceName'];
 
-        if ($this->authorizationHeader !== null && str_contains($this->authorizationHeader, 'Bearer ')) {
+        if ($this->authorizationHeader !== null && strpos($this->authorizationHeader, 'Bearer ') !== false) {
             return $this->extractIdentityTokenFromAuthorizationHeader($serviceName);
         }
 
@@ -138,7 +147,7 @@ final class OpenIdConnectToken extends AbstractToken
      */
     private function extractIdentityTokenFromAuthorizationHeader(string $serviceName): IdentityToken
     {
-        if ( ! str_starts_with($this->authorizationHeader, 'Bearer ')) {
+        if (strpos($this->authorizationHeader, 'Bearer') !== 0) {
             $this->setAuthenticationStatus(TokenInterface::NO_CREDENTIALS_GIVEN);
             throw new AuthenticationRequiredException(
                 'Could not extract access token from Authorization header: "Bearer" keyword is missing', 1589283608
@@ -168,7 +177,7 @@ final class OpenIdConnectToken extends AbstractToken
     {
         try {
             return $this->identityTokenRepository->get($serviceName);
-        } catch (NoSuchIdentityTokenException) {
+        } catch (NoSuchIdentityTokenException $exception) {
             $this->setAuthenticationStatus(TokenInterface::NO_CREDENTIALS_GIVEN);
             throw new AuthenticationRequiredException('Missing/empty IdentityToken for OIDC in session.', 1560349409);
         }
