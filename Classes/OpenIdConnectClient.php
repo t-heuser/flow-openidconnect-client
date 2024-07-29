@@ -15,6 +15,7 @@ use Flownative\OpenIdConnect\Client\Exceptions\ConnectionException;
 use Flownative\OpenIdConnect\Client\Exceptions\ServiceException;
 use GuzzleHttp\Client as HttpClient;
 use GuzzleHttp\Exception\GuzzleException;
+use GuzzleHttp\Utils;
 use League\OAuth2\Client\Provider\Exception\IdentityProviderException;
 use League\OAuth2\Client\Token\AccessToken;
 use Neos\Cache\Exception as CacheException;
@@ -25,6 +26,7 @@ use Neos\Utility\Arrays;
 use Psr\Http\Message\UriFactoryInterface;
 use Psr\Http\Message\UriInterface;
 use Psr\Log\LoggerInterface;
+use RuntimeException;
 
 final class OpenIdConnectClient
 {
@@ -38,7 +40,10 @@ final class OpenIdConnectClient
     protected $logger;
 
     #[Flow\Inject]
-    protected IdentityToken $identityToken;
+    protected IdentityTokenRepository $identityTokenRepository;
+
+    #[Flow\Inject]
+    protected IdentityTokenFactory $identityTokenFactory;
 
     #[Flow\Inject]
     protected UriFactoryInterface $uriFactory;
@@ -314,8 +319,8 @@ final class OpenIdConnectClient
     public function startAuthorization(UriInterface $returnToUri, string $scope): UriInterface
     {
         $returnArguments = (string)TokenArguments::fromArray([TokenArguments::SERVICE_NAME => $this->serviceName]);
-        if (strpos($returnArguments, 'ERROR') === 0) {
-            throw new \RuntimeException(substr($returnArguments, 6));
+        if (str_starts_with($returnArguments, 'ERROR')) {
+            throw new RuntimeException(substr($returnArguments, 6));
         }
         $returnToUri = $returnToUri->withQuery(
             trim(
@@ -326,7 +331,7 @@ final class OpenIdConnectClient
         $scope = trim(implode(' ', array_unique(array_merge(explode(' ', $scope), ['openid']))));
 
         if (empty($this->options['clientId']) || empty($this->options['clientSecret'])) {
-            throw new \RuntimeException(
+            throw new RuntimeException(
                 sprintf(
                     'OpenID Connect Client: Authorization Code Flow requires "clientId" and "clientSecret" to be configured for service "%s".',
                     $this->serviceName
@@ -349,7 +354,7 @@ final class OpenIdConnectClient
      * @throws ConnectionException
      * @throws ServiceException
      */
-    public function buildIdentityToken(string $authorizationIdentifier): void
+    public function buildIdentityToken(string $authorizationIdentifier): IdentityToken
     {
         $authorization = $this->getAuthorization($authorizationIdentifier);
         if ( ! $authorization instanceof Authorization) {
@@ -374,7 +379,9 @@ final class OpenIdConnectClient
             );
         }
         try {
-            $this->identityToken->setDataFromJwt($tokenValues['id_token'], $this->serviceName);
+            $identityToken = $this->identityTokenFactory->create();
+            $identityToken->setDataFromJwt($tokenValues['id_token'], $this->serviceName);
+            return $this->identityTokenRepository->save($identityToken);
         } catch (Exception $e) {
             throw new ServiceException('OpenID Connect Client: Failed parsing identity token from JWT', 1602501992, $e);
         }
@@ -417,7 +424,7 @@ final class OpenIdConnectClient
                 );
             }
 
-            $response = \GuzzleHttp\json_decode($response->getBody()->getContents(), true);
+            $response = Utils::jsonDecode($response->getBody()->getContents(), true);
             if ( ! is_array($response) || ! isset($response['keys'])) {
                 throw new ServiceException(
                     sprintf(
@@ -485,7 +492,7 @@ final class OpenIdConnectClient
                 ), 1554902567
             );
         }
-        $discoveredOptions = \GuzzleHttp\json_decode($response->getBody()->getContents(), true);
+        $discoveredOptions = Utils::jsonDecode($response->getBody()->getContents(), true);
         if ( ! is_array($discoveredOptions)) {
             throw new ConnectionException(
                 'OpenID Connect Client: Discovery endpoint returned invalid response.', 1554903349

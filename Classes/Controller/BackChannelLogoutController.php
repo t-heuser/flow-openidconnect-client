@@ -58,7 +58,7 @@ final class BackChannelLogoutController extends ActionController
         }
 
         // One of these will be present as it was verified before.
-        $sessionIdentifier = $logoutToken->values['sub'] ?? $logoutToken->values['sid'];
+        $sessionIdentifier = $logoutToken->getValues()['sub'] ?? $logoutToken->getValues()['sid'];
 
         $tagPrefix = md5("Flownative-OpenIdConnect-Client-$serviceName");
         $this->sessionManager->destroySessionsByTag(

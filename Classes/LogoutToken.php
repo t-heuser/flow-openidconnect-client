@@ -11,7 +11,7 @@ use Flownative\OpenIdConnect\Client\Exceptions\LogoutTokenClaimValidationExcepti
  *
  * @see https://openid.net/specs/openid-connect-backchannel-1_0.html#LogoutToken
  */
-class LogoutToken extends AbstractToken
+final class LogoutToken extends AbstractToken
 {
     /**
      * Verify each claim in the logout token according to the spec for back-channel logout.
@@ -33,12 +33,12 @@ class LogoutToken extends AbstractToken
         }
 
         // Verify that the Logout Token doesn't contain a nonce Claim.
-        if (array_key_exists('nonce', $this->values)) {
+        if (array_key_exists('nonce', $this->getValues())) {
             throw new LogoutTokenClaimValidationException('The given logout token contains the "nonce" parameter.');
         }
 
         // Verify that the logout token contains a sub or sid, or both.
-        if ( ! array_key_exists('sid', $this->values) && ! array_key_exists('sub', $this->values)) {
+        if ( ! array_key_exists('sid', $this->getValues()) && ! array_key_exists('sub', $this->getValues())) {
             throw new LogoutTokenClaimValidationException(
                 'The given logout token does not contain the "sid" or "sub" parameter.'
             );
@@ -48,13 +48,13 @@ class LogoutToken extends AbstractToken
          * Verify that the Logout Token contains an events Claim whose value is a JSON object containing the member name
          * http://schemas.openid.net/event/backchannel-logout
          */
-        if ( ! array_key_exists('events', $this->values)) {
+        if ( ! array_key_exists('events', $this->getValues())) {
             throw new LogoutTokenClaimValidationException(
                 'The given logout token does not contain the "events" parameter.'
             );
         }
 
-        $events = $this->values['events'] ?? '';
+        $events = $this->getValues()['events'] ?? '';
         if ( ! array_key_exists('http://schemas.openid.net/event/backchannel-logout', $events)) {
             throw new LogoutTokenClaimValidationException(
                 'The given logout token contains an invalid "events" parameter.'
@@ -71,7 +71,7 @@ class LogoutToken extends AbstractToken
             }
         }
 
-        if ($client->getRealmUri() !== $this->values['iss']) {
+        if ($client->getRealmUri() !== $this->getValues()['iss']) {
             throw new LogoutTokenClaimValidationException(
                 'The given logout token does not contain a valid "iss" parameter.'
             );

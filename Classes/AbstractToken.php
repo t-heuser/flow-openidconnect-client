@@ -15,25 +15,27 @@ use Throwable;
 
 /**
  * Class AbstractToken
- *
- * All properties MUST NOT be private as the IdentityToken class which inherit from this one is stored in the session
- * and private properties are not set if loading an object from session storage.
  */
 abstract class AbstractToken
 {
-    public array $values = [];
-
-    protected array $header = [];
-
     protected ?string $jwt = null;
 
-    protected ?Token $parsedJwt = null;
+    private array $header = [];
 
-    protected string $payload = '';
+    private ?Token $parsedJwt = null;
 
-    protected string $signature = '';
+    private string $payload = '';
 
-    protected string $oidcServiceName = '';
+    private string $signature = '';
+
+    private string $oidcServiceName = '';
+
+    private array $values = [];
+
+    public function getValues(): array
+    {
+        return $this->values;
+    }
 
     /**
      * @see https://tools.ietf.org/html/rfc7519
@@ -126,15 +128,15 @@ abstract class AbstractToken
 
     public function hasValidAudience(string $expectedAudience): bool
     {
-        if ( ! isset($this->values['aud'])) {
+        if ( ! isset($this->getValues()['aud'])) {
             return false;
         }
 
-        if (is_array(($this->values['aud']))) {
-            return in_array($expectedAudience, $this->values['aud'], true);
+        if (is_array(($this->getValues()['aud']))) {
+            return in_array($expectedAudience, $this->getValues()['aud'], true);
         }
 
-        return $expectedAudience === $this->values['aud'];
+        return $expectedAudience === $this->getValues()['aud'];
     }
 
     /**
