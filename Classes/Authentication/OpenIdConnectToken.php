@@ -5,18 +5,23 @@ declare(strict_types=1);
 namespace Flownative\OpenIdConnect\Client\Authentication;
 
 use Flownative\OpenIdConnect\Client\Exceptions\ConnectionException;
+use Flownative\OpenIdConnect\Client\Exceptions\NoSuchIdentityTokenException;
 use Flownative\OpenIdConnect\Client\Exceptions\ServiceException;
 use Flownative\OpenIdConnect\Client\IdentityToken;
+use Flownative\OpenIdConnect\Client\IdentityTokenFactory;
+use Flownative\OpenIdConnect\Client\IdentityTokenRepository;
 use Flownative\OpenIdConnect\Client\OAuthClient;
 use Flownative\OpenIdConnect\Client\OpenIdConnectClient;
 use InvalidArgumentException;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Mvc\ActionRequest;
+use Neos\Flow\Persistence\Exception\ObjectValidationFailedException;
 use Neos\Flow\Security\Authentication\Token\AbstractToken;
 use Neos\Flow\Security\Authentication\TokenInterface;
 use Neos\Flow\Security\Exception\AccessDeniedException;
 use Neos\Flow\Security\Exception\AuthenticationRequiredException;
 use Neos\Flow\Security\Exception\InvalidAuthenticationStatusException;
+use Neos\Flow\Session\Exception\SessionNotStartedException;
 
 final class OpenIdConnectToken extends AbstractToken
 {
@@ -25,21 +30,17 @@ final class OpenIdConnectToken extends AbstractToken
      */
     public const OIDC_PARAMETER_NAME = 'flownative_oidc';
 
-    /**
-     * @var array
-     */
-    protected $queryParameters;
-
-    /**
-     * @var string
-     */
-    protected $authorizationHeader;
+    #[Flow\Inject]
+    protected IdentityTokenRepository $identityTokenRepository;
 
     #[Flow\Inject]
-    protected IdentityToken $identityToken;
+    protected IdentityTokenFactory $identityTokenFactory;
+
+    private array $queryParameters = [];
+
+    private string|array|null $authorizationHeader = '';
 
     /**
-     * @param  ActionRequest  $actionRequest
      * @throws InvalidAuthenticationStatusException
      */
     public function updateCredentials(ActionRequest $actionRequest): void
@@ -58,9 +59,12 @@ final class OpenIdConnectToken extends AbstractToken
             $this->authorizationHeader = reset($this->authorizationHeader);
         }
 
-        if ( ! $this->identityToken->hasData() && $this->getAuthenticationStatus(
-            ) !== self::AUTHENTICATION_SUCCESSFUL) {
-            $this->setAuthenticationStatus(self::AUTHENTICATION_NEEDED);
+        try {
+            $this->identityTokenRepository->get($this->entryPoint->getOptions()['serviceName']);
+        } catch (NoSuchIdentityTokenException) {
+            if ($this->getAuthenticationStatus() !== self::AUTHENTICATION_SUCCESSFUL) {
+                $this->setAuthenticationStatus(self::AUTHENTICATION_NEEDED);
+            }
         }
     }
 
@@ -74,18 +78,16 @@ final class OpenIdConnectToken extends AbstractToken
      *
      * NOTE: The token is not verified yet – signature and expiration time must be checked by code using this token
      */
-    public function extractIdentityTokenFromRequest(string $serviceName): void
+    public function extractIdentityTokenFromRequest(): IdentityToken
     {
-        if ($this->authorizationHeader !== null && str_contains($this->authorizationHeader, 'Bearer ')) {
-            $this->extractIdentityTokenFromAuthorizationHeader($serviceName);
+        $serviceName = $this->entryPoint->getOptions()['serviceName'];
 
-            return;
+        if ($this->authorizationHeader !== null && str_contains($this->authorizationHeader, 'Bearer ')) {
+            return $this->extractIdentityTokenFromAuthorizationHeader($serviceName);
         }
 
         if ( ! isset($this->queryParameters[self::OIDC_PARAMETER_NAME])) {
-            $this->hasInitializedIdentityTokenInSession();
-
-            return;
+            return $this->getIdentityTokenFromSession($serviceName);
         }
 
         $authorizationIdQueryParameterName = OAuthClient::generateAuthorizationIdQueryParameterName(
@@ -114,8 +116,10 @@ final class OpenIdConnectToken extends AbstractToken
         $client = new OpenIdConnectClient($tokenArguments[TokenArguments::SERVICE_NAME]);
 
         try {
-            $client->buildIdentityToken($authorizationIdentifier);
+            $identityToken = $client->buildIdentityToken($authorizationIdentifier);
             $client->removeAuthorization($authorizationIdentifier);
+
+            return $identityToken;
         } catch (ServiceException|ConnectionException $exception) {
             throw new AccessDeniedException(
                 sprintf(
@@ -132,7 +136,7 @@ final class OpenIdConnectToken extends AbstractToken
      * @throws AuthenticationRequiredException
      * @throws InvalidAuthenticationStatusException
      */
-    private function extractIdentityTokenFromAuthorizationHeader(string $serviceName): void
+    private function extractIdentityTokenFromAuthorizationHeader(string $serviceName): IdentityToken
     {
         if ( ! str_starts_with($this->authorizationHeader, 'Bearer ')) {
             $this->setAuthenticationStatus(TokenInterface::NO_CREDENTIALS_GIVEN);
@@ -143,10 +147,16 @@ final class OpenIdConnectToken extends AbstractToken
 
         try {
             $jwt = substr($this->authorizationHeader, strlen('Bearer '));
-            $this->identityToken->setDataFromJwt($jwt, $serviceName);
-        } catch (InvalidArgumentException $exception) {
+            $identityToken = $this->identityTokenFactory->create();
+            $identityToken->setDataFromJwt($jwt, $serviceName);
+
+            return $this->identityTokenRepository->save($identityToken);
+        } catch (InvalidArgumentException|ObjectValidationFailedException $exception) {
             $this->setAuthenticationStatus(TokenInterface::WRONG_CREDENTIALS);
             throw new AccessDeniedException('Could not extract JWT from Authorization header', 1589283968, $exception);
+        } catch (SessionNotStartedException $exception) {
+            $this->setAuthenticationStatus(TokenInterface::AUTHENTICATION_NEEDED);
+            throw new AccessDeniedException('An error occurred while trying to log in.', 1589283965, $exception);
         }
     }
 
@@ -154,9 +164,11 @@ final class OpenIdConnectToken extends AbstractToken
      * @throws AuthenticationRequiredException
      * @throws InvalidAuthenticationStatusException
      */
-    private function hasInitializedIdentityTokenInSession(): void
+    private function getIdentityTokenFromSession(string $serviceName): IdentityToken
     {
-        if ( ! $this->identityToken->hasData()) {
+        try {
+            return $this->identityTokenRepository->get($serviceName);
+        } catch (NoSuchIdentityTokenException) {
             $this->setAuthenticationStatus(TokenInterface::NO_CREDENTIALS_GIVEN);
             throw new AuthenticationRequiredException('Missing/empty IdentityToken for OIDC in session.', 1560349409);
         }

@@ -3,37 +3,18 @@
 namespace Flownative\OpenIdConnect\Client;
 
 use InvalidArgumentException;
-use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Session\SessionManagerInterface;
 
 /**
- * Value object for an OpenID Connect identity token
+ * Value object for an OpenID Connect identity token.
  *
  * @see https://openid.net/specs/openid-connect-basic-1_0.html#IDToken
- *
- * @Flow\Scope("singleton")
  */
-class IdentityToken extends AbstractToken
+final class IdentityToken extends AbstractToken
 {
-    private const SESSION_DATA_IDENTIFIER_KEY = 'identity_token_data';
-
     public function __construct(
         private readonly SessionManagerInterface $sessionManager
     ) {
-        $currentSession = $this->sessionManager->getCurrentSession();
-        if ( ! $currentSession->isStarted()) {
-            return;
-        }
-        $dataFromSession = $currentSession->getData(self::SESSION_DATA_IDENTIFIER_KEY);
-        if ( ! is_array($dataFromSession) ||
-            ! array_key_exists('jwt', $dataFromSession) ||
-            ! array_key_exists('oidcServiceName', $dataFromSession) ||
-            ! is_string($dataFromSession['jwt']) ||
-            ! is_string($dataFromSession['oidcServiceName'])) {
-            return;
-        }
-
-        self::setDataFromJwt($dataFromSession['jwt'], $dataFromSession['oidcServiceName']);
     }
 
     /**
@@ -44,7 +25,7 @@ class IdentityToken extends AbstractToken
     {
         parent::setDataFromJwt($jwt, $oidcServiceName);
 
-        $sessionIdentifier = $this->values['sub'] ?? $this->values['sid'] ?? null;
+        $sessionIdentifier = $this->getValues()['sub'] ?? $this->getValues()['sid'] ?? null;
         if ($sessionIdentifier === null) {
             throw new InvalidArgumentException('The identity token is missing the "sub" and "sid" values.');
         }
@@ -53,11 +34,6 @@ class IdentityToken extends AbstractToken
         $tagPrefix = md5("Flownative-OpenIdConnect-Client-$oidcServiceName");
         // Session is already started at this point, this exception can never really occur.
         $currentSession->addTag("$tagPrefix-$sessionIdentifier");
-
-        $currentSession->putData(
-            self::SESSION_DATA_IDENTIFIER_KEY,
-            ['jwt' => $this->asJwt(), 'oidcServiceName' => $oidcServiceName]
-        );
     }
 
     public function hasData(): bool
