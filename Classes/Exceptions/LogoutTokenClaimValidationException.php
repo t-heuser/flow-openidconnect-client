@@ -1,6 +1,6 @@
 <?php
 
-namespace Flownative\OpenIdConnect\Client;
+namespace Flownative\OpenIdConnect\Client\Exceptions;
 
 use Exception;
 

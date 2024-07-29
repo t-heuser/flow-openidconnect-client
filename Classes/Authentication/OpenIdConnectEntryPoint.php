@@ -3,9 +3,9 @@ declare(strict_types=1);
 namespace Flownative\OpenIdConnect\Client\Authentication;
 
 use Flownative\OAuth2\Client\OAuthClientException;
-use Flownative\OpenIdConnect\Client\ConfigurationException;
+use Flownative\OpenIdConnect\Client\Exceptions\ConfigurationException;
+use Flownative\OpenIdConnect\Client\Exceptions\ServiceException;
 use Flownative\OpenIdConnect\Client\OpenIdConnectClient;
-use Flownative\OpenIdConnect\Client\ServiceException;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Http\ContentStream;
 use Neos\Flow\Log\Utility\LogEnvironment;

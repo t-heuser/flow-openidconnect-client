@@ -6,10 +6,10 @@ namespace Flownative\OpenIdConnect\Client\Authentication;
 
 use DateTimeImmutable;
 use Exception;
-use Flownative\OpenIdConnect\Client\AuthenticationException;
+use Flownative\OpenIdConnect\Client\Exceptions\AuthenticationException;
+use Flownative\OpenIdConnect\Client\Exceptions\ServiceException;
 use Flownative\OpenIdConnect\Client\IdentityToken;
 use Flownative\OpenIdConnect\Client\OpenIdConnectClient;
-use Flownative\OpenIdConnect\Client\ServiceException;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Configuration\Exception\InvalidConfigurationTypeException;
 use Neos\Flow\Log\Utility\LogEnvironment;

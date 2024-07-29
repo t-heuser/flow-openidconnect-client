@@ -3,8 +3,8 @@
 namespace Flownative\OpenIdConnect\Client\Controller;
 
 use Exception;
+use Flownative\OpenIdConnect\Client\Exceptions\LogoutTokenClaimValidationException;
 use Flownative\OpenIdConnect\Client\LogoutToken;
-use Flownative\OpenIdConnect\Client\LogoutTokenClaimValidationException;
 use Flownative\OpenIdConnect\Client\OpenIdConnectClient;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Mvc\Controller\ActionController;

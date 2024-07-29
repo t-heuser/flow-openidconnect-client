@@ -3,6 +3,7 @@
 namespace Flownative\OpenIdConnect\Client;
 
 use DateTimeInterface;
+use Flownative\OpenIdConnect\Client\Exceptions\ServiceException;
 use InvalidArgumentException;
 use JsonException;
 use Lcobucci\JWT\Encoding\JoseEncoder;

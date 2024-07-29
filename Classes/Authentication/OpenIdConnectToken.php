@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace Flownative\OpenIdConnect\Client\Authentication;
 
-use Flownative\OpenIdConnect\Client\ConnectionException;
+use Flownative\OpenIdConnect\Client\Exceptions\ConnectionException;
+use Flownative\OpenIdConnect\Client\Exceptions\ServiceException;
 use Flownative\OpenIdConnect\Client\IdentityToken;
 use Flownative\OpenIdConnect\Client\OAuthClient;
 use Flownative\OpenIdConnect\Client\OpenIdConnectClient;
-use Flownative\OpenIdConnect\Client\ServiceException;
 use InvalidArgumentException;
 use Neos\Flow\Annotations as Flow;
 use Neos\Flow\Mvc\ActionRequest;

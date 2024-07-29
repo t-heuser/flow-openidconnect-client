@@ -4,6 +4,7 @@ namespace Flownative\OpenIdConnect\Client;
 
 use DateTimeImmutable;
 use Exception;
+use Flownative\OpenIdConnect\Client\Exceptions\LogoutTokenClaimValidationException;
 
 /**
  * Value object for an OpenID Connect logout token

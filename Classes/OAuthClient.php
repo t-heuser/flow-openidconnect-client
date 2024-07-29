@@ -2,6 +2,7 @@
 declare(strict_types=1);
 namespace Flownative\OpenIdConnect\Client;
 
+use Flownative\OpenIdConnect\Client\Exceptions\ConfigurationException;
 use Neos\Flow\Annotations as Flow;
 
 /**
